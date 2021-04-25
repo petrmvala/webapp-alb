@@ -23,3 +23,18 @@ variable "terminate_ssl" {
   default     = true
 }
 
+variable "min_size" {
+  description = "Minimal number of instances in ASG to be operable"
+  default     = 1
+}
+
+variable "max_size" {
+  description = "Maximal number of instances in ASG"
+  default     = 3
+}
+
+variable "desired_capacity" {
+  description = "Desired number of instances in ASG"
+  default     = 2
+}
+
