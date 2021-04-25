@@ -18,11 +18,6 @@ variable "target_port" {
 # These parameters have reasonable defaults.
 # ---------------------------------------------------------------------------------------------------------------------
 
-variable "terminate_ssl" {
-  description = "True for HTTP between ALB and EC2, false for HTTPS (certificate needed)"
-  default     = true
-}
-
 variable "min_size" {
   description = "Minimal number of instances in ASG to be operable"
   default     = 1

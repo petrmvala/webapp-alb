@@ -27,7 +27,7 @@ resource "aws_lb" "this" {
 
 resource "aws_lb_target_group" "this" {
   port     = var.target_port
-  protocol = var.terminate_ssl == false ? "HTTPS" : "HTTP"
+  protocol = "HTTP"
   vpc_id   = aws_vpc.this.id
   tags     = var.tags
 }
@@ -72,20 +72,32 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-
+data "cloudinit_config" "this" {
+  part {
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/configure_webserver.sh", {
+      port = var.target_port
+    })
+  }
+}
 
 resource "aws_launch_configuration" "this" {
-  name_prefix     = "lc-compute"
-  image_id        = data.aws_ami.ubuntu.id
-  instance_type   = "t2.micro"
-  key_name        = "pokus"
-  security_groups = [aws_security_group.compute.id]
-  user_data       = <<-EOF
-										#!/bin/bash
-										echo Hi, there! > index.html
-										nohup busybox httpd -f -p "${var.target_port}" &
-										EOF
+  name_prefix      = "lc-compute"
+  image_id         = data.aws_ami.ubuntu.id
+  instance_type    = "t2.micro"
+  key_name         = "pokus"
+  security_groups  = [aws_security_group.compute.id]
+  user_data_base64 = data.cloudinit_config.this.rendered
 
+  root_block_device {
+    encrypted = true
+  }
+
+  ebs_block_device {
+    device_name = "sdz"
+    encrypted   = true
+    volume_size = 8
+  }
   # required when used together with asg
   lifecycle {
     create_before_destroy = true
@@ -98,6 +110,7 @@ resource "aws_autoscaling_group" "this" {
   desired_capacity     = var.desired_capacity
   min_size             = var.min_size
   max_size             = var.max_size
+  health_check_type    = "ELB"
   launch_configuration = aws_launch_configuration.this.name
   target_group_arns    = [aws_lb_target_group.this.arn]
   vpc_zone_identifier  = [aws_subnet.compute_11.id]

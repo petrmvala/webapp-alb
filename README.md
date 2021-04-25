@@ -1,4 +1,12 @@
-----------------------------------------------------------------------------------------------------
+Repository structure:
+=====================
+
+```
+/modules    -> individual terraform modules
+/examples   -> examples to terraform modules
+/test       -> tests for terraform modules
+```
+
 Tasks
 =====
 
@@ -29,8 +37,6 @@ Extra Credits
 * You should assume that the webserver may receive high volumes of web traffic; you should appropriately manage the storaga / growth of logs
 
 
-----------------------------------------------------------------------------------------------------
-
 Design considerations
 =====================
 
@@ -39,15 +45,30 @@ Network
 
 The VPC with CIDR 10.0.0.0/16 accomodates for 65534 hosts and is divided into subnets in the following fashion:
 
-Public subnets: 10.0.1.0/24 (and onwards incrementing 3rd byte up to 9, up to 10.0.9.0/24)
-Compute subnets (private): 10.0.11.0/24 (and onwards incrementing 3rd byte up to 19, up to 10.0.19.0/24)
+* Public subnets: 10.0.1.0/24 (and onwards incrementing 3rd byte up to 9, up to 10.0.9.0/24)
+* Compute subnets (private): 10.0.11.0/24 (and onwards incrementing 3rd byte up to 19, up to 10.0.19.0/24)
 
-All the subnets have the same size, accomodating 254 hosts each, minus some AWS reserved addresses. The subnets past 10.0.20.0/24 can be used for e.g. more compute resources or database resources.
+All the subnets have the same size, accomodating 254 hosts each, minus some AWS reserved addresses. The subnets past 10.0.20.0/24 can be used for e.g.
+more compute resources or database resources.
 
 The subnets where 3rd byte is divisible by 10 (10.0.0.0/24, 10.0.10.0/24) are reserved for VPC related/global services.
 
 Naming convention:
-Public subnets: `public-<x>`
-Compute subnets: `compute-<x>`
+* Public subnets: `public-<x>`
+* Compute subnets: `compute-<x>`
 
-where `<x>` stands for 3rd byte. Example: `10.0.1.0/24 -> public-1`.
+where `<x>` stands for 3rd byte. Example: `10.0.1.0/24 -> public-1`. Subnets are assigned into AZs incrementally, in round robin fashion.
+This is restarted for each group of subnets:
+* `public-1 -> us-east-1a`, `public-2 -> us-east-1b`, ...
+* `compute-11 -> us-east-1a`, ...
+
+Security
+--------
+
+There are two security groups; first for ALB, allowing HTTP access on standard port to ALB. Second security group is used for the compute instances,
+with allowed ingress from loadbalancer to the webserver port only, and SSH port from everywhere. Egress permitted everywhere.
+
+This id of course not the final nor the best state. Future ideas:
+* Request SSL certificate from ACM and redirect HTTP traffic to HTTPS on the ALB, but that would also require DNS name, which would not be for free.
+* Tighten the security group egress rules, compute probably just to NAT gateway (SGs keep session reply traffic)
+* Figure out a way to login to instances without SSH key (HashiCorp Boundary? LDAP? List of allowed users in TF deployed directly to access.conf?)

@@ -19,3 +19,11 @@ locals {
     Environment = "Development"
   }
 }
+
+output "app_endpoint" {
+  value = module.webapp-alb.app_endpoint
+}
+
+output "bastion" {
+  value = module.webapp-alb.bastion
+}
