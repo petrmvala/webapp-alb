@@ -13,6 +13,11 @@ variable "target_port" {
   type        = number
 }
 
+variable "ssh_key" {
+  description = "SSH key to instances"
+  type        = string
+}
+
 # ---------------------------------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
 # These parameters have reasonable defaults.

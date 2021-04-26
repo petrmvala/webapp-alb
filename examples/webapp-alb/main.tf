@@ -9,6 +9,7 @@ terraform {
 module "webapp-alb" {
   source      = "../../modules/webapp-alb"
   target_port = 8080
+  ssh_key     = "pokus"
   tags        = local.tags
 }
 

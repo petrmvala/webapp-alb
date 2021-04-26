@@ -79,13 +79,17 @@ data "cloudinit_config" "this" {
       port = var.target_port
     })
   }
+  part {
+    content_type = "text/x-shellscript"
+    content      = file("${path.module}/configure_partition.sh")
+  }
 }
 
 resource "aws_launch_configuration" "this" {
   name_prefix      = "lc-compute"
   image_id         = data.aws_ami.ubuntu.id
   instance_type    = "t2.micro"
-  key_name         = "pokus"
+  key_name         = var.ssh_key
   security_groups  = [aws_security_group.compute.id]
   user_data_base64 = data.cloudinit_config.this.rendered
 
